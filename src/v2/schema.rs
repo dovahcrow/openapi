@@ -198,7 +198,6 @@ pub struct Response {
 #[serde(untagged)]
 pub enum ParameterOrRef {
     /// both bodyParameter and nonBodyParameter in one for now
-    #[derive(Default)]
     Parameter {
         /// The name of the parameter.
         name: String,
@@ -374,14 +373,14 @@ mod tests {
         );
     }
 
-
-
     #[test]
     fn parameter_or_ref_deserializes_ref() {
         let json = r#"{"$ref":"foo/bar"}"#;
         assert_eq!(
             serde_yaml::from_str::<ParameterOrRef>(&json).unwrap(),
-            ParameterOrRef::Ref { ref_path: "foo/bar".into() }
+            ParameterOrRef::Ref {
+                ref_path: "foo/bar".into()
+            }
         );
     }
 
@@ -390,9 +389,9 @@ mod tests {
         let json = r#"{"$ref":"foo/bar"}"#;
         assert_eq!(
             json,
-            serde_json::to_string(
-                &ParameterOrRef::Ref { ref_path: "foo/bar".into() },
-            ).unwrap()
+            serde_json::to_string(&ParameterOrRef::Ref {
+                ref_path: "foo/bar".into()
+            },).unwrap()
         );
     }
 }

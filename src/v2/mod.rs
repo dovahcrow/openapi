@@ -6,4 +6,7 @@
 
 mod schema;
 
-pub use v2::schema::*;
+pub use v2::schema::{
+    Contact, ExternalDoc, Info, License, Operation, Parameter, ParameterOrRef,
+    PathItem, Response, Schema, Scheme, Security, Spec, Tag,
+};
