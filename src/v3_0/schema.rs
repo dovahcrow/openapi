@@ -1,23 +1,24 @@
 use std::collections::BTreeMap;
 
-use url;
-use url_serde;
 use semver;
 use serde_json;
+use url;
+use url_serde;
 
-use MINIMUM_OPENAPI30_VERSION;
+use crate::errors::{OpenApiError, Result};
 use v3_0::components::{Components, ObjectOrReference};
-use errors;
+use MINIMUM_OPENAPI30_VERSION;
 
 impl Spec {
-    pub fn validate_version(&self) -> errors::Result<semver::Version> {
+    pub fn validate_version(&self) -> Result<semver::Version> {
         let spec_version = &self.openapi;
         let sem_ver = semver::Version::parse(spec_version)?;
-        let required_version = semver::VersionReq::parse(MINIMUM_OPENAPI30_VERSION).unwrap();
+        let required_version =
+            semver::VersionReq::parse(MINIMUM_OPENAPI30_VERSION).unwrap();
         if required_version.matches(&sem_ver) {
             Ok(sem_ver)
         } else {
-            Err(errors::ErrorKind::UnsupportedSpecFileVersion(sem_ver))?
+            Err(OpenApiError::UnsupportedSpecFileVersion(sem_ver))?
         }
     }
 }
@@ -75,7 +76,10 @@ pub struct Spec {
     pub tags: Option<Vec<Tag>>,
 
     /// Additional external documentation.
-    #[serde(skip_serializing_if = "Option::is_none", rename = "externalDocs")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "externalDocs"
+    )]
     pub external_docs: Option<ExternalDoc>,
     // TODO: Add "Specification Extensions" https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#specificationExtensions}
 }
@@ -115,12 +119,15 @@ pub struct Url(#[serde(with = "url_serde")] url::Url);
 /// [link][https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#contactObject]
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Default)]
 pub struct Contact {
-    #[serde(skip_serializing_if = "Option::is_none")] pub name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")] pub url: Option<Url>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub url: Option<Url>,
 
     // TODO: Make sure the email is a valid email
-    #[serde(skip_serializing_if = "Option::is_none")] pub email: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
     // TODO: Add "Specification Extensions" https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#specificationExtensions
 }
 
@@ -243,12 +250,18 @@ pub struct Operation {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     /// Additional external documentation for this operation.
-    #[serde(skip_serializing_if = "Option::is_none", rename = "externalDocs")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "externalDocs"
+    )]
     pub external_docs: Option<ExternalDoc>,
     /// Unique string used to identify the operation. The id MUST be unique among all operations
     /// described in the API. Tools and libraries MAY use the operationId to uniquely identify an
     /// operation, therefore, it is RECOMMENDED to follow common programming naming conventions.
-    #[serde(skip_serializing_if = "Option::is_none", rename = "operationId")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "operationId"
+    )]
     pub operation_id: Option<String>,
 
     /// A list of parameters that are applicable for this operation. If a parameter is already
@@ -267,7 +280,10 @@ pub struct Operation {
     pub parameters: Option<Vec<ObjectOrReference<Parameter>>>,
 
     /// The request body applicable for this operation. The requestBody is only supported in HTTP methods where the HTTP 1.1 specification RFC7231 has explicitly defined semantics for request bodies. In other cases where the HTTP spec is vague, requestBody SHALL be ignored by consumers.
-    #[serde(skip_serializing_if = "Option::is_none", rename = "requestBody")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "requestBody"
+    )]
     pub request_body: Option<ObjectOrReference<RequestBody>>,
 
     /// The list of possible responses as they are returned from executing this operation.
@@ -334,8 +350,10 @@ pub struct Parameter {
     /// may be `header`, `query`, 'path`, `formData`
     #[serde(rename = "in")]
     location: String,
-    #[serde(skip_serializing_if = "Option::is_none")] required: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")] schema: Option<Schema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    required: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    schema: Option<Schema>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "uniqueItems")]
     unique_items: Option<bool>,
@@ -343,7 +361,8 @@ pub struct Parameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "type")]
     param_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")] format: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    format: Option<String>,
     /// A brief description of the parameter. This could contain examples
     /// of use.  GitHub Flavored Markdown is allowed.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -384,21 +403,25 @@ pub struct Schema {
     #[serde(rename = "$ref")]
     pub ref_path: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")] pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "type")]
     pub schema_type: Option<String>,
 
-    #[serde(skip_serializing_if = "Option::is_none")] pub format: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub format: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "enum")]
     pub enum_values: Option<Vec<String>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")] pub required: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<Vec<String>>,
 
-    #[serde(skip_serializing_if = "Option::is_none")] pub items: Option<Box<Schema>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Box<Schema>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub properties: Option<BTreeMap<String, Schema>>,
@@ -412,7 +435,10 @@ pub struct Schema {
     /// See [link]
     /// [link][https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#properties]
     // FIXME: Why can this be a "boolean" (as per the spec)? It doesn't make sense. Here it's not.
-    #[serde(skip_serializing_if = "Option::is_none", rename = "additionalProperties")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "additionalProperties"
+    )]
     pub additional_properties: Option<ObjectOrReference<Box<Schema>>>,
 
     /// A free-form property to include an example of an instance for this schema.
@@ -504,8 +530,10 @@ pub struct Response {
 pub struct Header {
     // FIXME: Is the third change properly implemented?
     // FIXME: Merge `ObjectOrReference<Header>::Reference` and `ParameterOrRef::Reference`
-    #[serde(skip_serializing_if = "Option::is_none")] required: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")] schema: Option<Schema>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    required: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    schema: Option<Schema>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "uniqueItems")]
     unique_items: Option<bool>,
@@ -513,7 +541,8 @@ pub struct Header {
     #[serde(skip_serializing_if = "Option::is_none")]
     #[serde(rename = "type")]
     param_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")] format: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    format: Option<String>,
     /// A brief description of the parameter. This could contain examples
     /// of use.  GitHub Flavored Markdown is allowed.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -550,7 +579,8 @@ pub struct RequestBody {
     /// is applicable. e.g. text/plain overrides text/*
     pub content: BTreeMap<String, MediaType>,
 
-    #[serde(skip_serializing_if = "Option::is_none")] pub required: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub required: Option<bool>,
 }
 
 /// The Link object represents a possible design-time link for a response.
@@ -579,7 +609,8 @@ pub enum Link {
     /// [Operation Object](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.1.md#operationObject)
     /// in the OpenAPI definition.
     Ref {
-        #[serde(rename = "operationRef")] operation_ref: String,
+        #[serde(rename = "operationRef")]
+        operation_ref: String,
 
         // FIXME: Implement
         // /// A map representing parameters to pass to an operation as specified with `operationId`
@@ -610,7 +641,8 @@ pub enum Link {
     /// The name of an _existing_, resolvable OAS operation, as defined with a unique
     /// `operationId`. This field is mutually exclusive of the `operationRef` field.
     Id {
-        #[serde(rename = "operationId")] operation_id: String,
+        #[serde(rename = "operationId")]
+        operation_id: String,
 
         // FIXME: Implement
         // /// A map representing parameters to pass to an operation as specified with `operationId`
@@ -687,7 +719,10 @@ pub struct Encoding {
     /// for `array` – the default is defined based on the inner type. The value can be a
     /// specific media type (e.g. `application/json`), a wildcard media type
     /// (e.g. `image/*`), or a comma-separated list of the two types.
-    #[serde(skip_serializing_if = "Option::is_none", rename = "contentType")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "contentType"
+    )]
     pub content_type: Option<String>,
 
     /// A map allowing additional information to be provided as headers, for example
@@ -722,7 +757,10 @@ pub struct Encoding {
     /// to be included without percent-encoding. The default value is `false`. This
     /// property SHALL be ignored if the request body media type is
     /// not `application/x-www-form-urlencoded`.
-    #[serde(skip_serializing_if = "Option::is_none", rename = "allowReserved")]
+    #[serde(
+        skip_serializing_if = "Option::is_none",
+        rename = "allowReserved"
+    )]
     pub allow_reserved: Option<bool>,
 }
 
@@ -769,12 +807,14 @@ pub enum SecurityScheme {
     #[serde(rename = "apiKey")]
     ApiKey {
         name: String,
-        #[serde(rename = "in")] location: String,
+        #[serde(rename = "in")]
+        location: String,
     },
     #[serde(rename = "http")]
     Http {
         scheme: String,
-        #[serde(rename = "bearerFormat")] bearer_format: String,
+        #[serde(rename = "bearerFormat")]
+        bearer_format: String,
     },
     // FIXME: Implement
     // #[serde(rename = "oauth2")]
@@ -789,7 +829,8 @@ pub enum SecurityScheme {
     // },
     #[serde(rename = "openIdConnect")]
     OpenIdConnect {
-        #[serde(rename = "openIdConnectUrl")] open_id_connect_url: String,
+        #[serde(rename = "openIdConnectUrl")]
+        open_id_connect_url: String,
     },
 }
 
